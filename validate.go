@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 ) 
 	
 type parameters struct {
@@ -11,11 +12,7 @@ type parameters struct {
 }
 
 type returnValid struct {
-	Valid bool `json:"valid"`
-}
-
-type returnError struct {
-	Error string `json:"error"`
+	CleanedBody string `json:"cleaned_body"`
 }
 
 func handlerChirpsValidate(w http.ResponseWriter, r *http.Request)  {
@@ -35,8 +32,27 @@ func handlerChirpsValidate(w http.ResponseWriter, r *http.Request)  {
 	if len(params.Body)	> maxchirpslen {
 		respondWithError(w, http.StatusBadRequest, "Chirp is too long", nil)
 		} else {
-		respondWithJSON(w, http.StatusOK, returnValid{Valid: true})
+			cleaned := getCleanBody(params.Body, badWords)
+			respondWithJSON(w, http.StatusOK, returnValid{CleanedBody: cleaned})
 	}
+}
+
+
+var badWords = map[string]struct{}{
+"kerfuffle": {},
+"sharbert":  {},
+"fornax":    {},
+}
+
+func getCleanBody(text string, badWords map[string]struct{}) string {
+	words := strings.Split(text, " ")
+	for i, word := range words {
+		loweredWord := strings.ToLower(word)
+		if _, ok := badWords[loweredWord]; ok {
+			words[i] = "****"
+		}
+	}
+	return strings.Join(words, " ")
 }
 
 
