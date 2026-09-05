@@ -5,17 +5,32 @@ import (
 	"log"
 	"net/http"
 	"sync/atomic"
+	"github.com/joho/godotenv"
+	"os"
+	"database/sql"
+	"github.com/Aleksy37/chirpy/internal/database"
 )
+
+import _ "github.com/lib/pq"
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
+	dbQueries *database.Queries
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+    log.Fatal("Error loading .env file")
+  }
+  	dbURL := os.Getenv("DB_URL")
+	db, err := sql.Open("postgres", dbURL)
+	
+
 	port := "8080"
 	filepathRoot := "."
 
-	apiCfg := &apiConfig{}
+	apiCfg := &apiConfig{dbQueries: database.New(db)}
 	
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
