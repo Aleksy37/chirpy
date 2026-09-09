@@ -15,22 +15,36 @@ import _ "github.com/lib/pq"
 
 type apiConfig struct {
 	fileserverHits atomic.Int32
-	dbQueries *database.Queries
+	db *database.Queries
+	platform string
 }
 
 func main() {
-	err := godotenv.Load()
-	if err != nil {
-    log.Fatal("Error loading .env file")
-  }
-  	dbURL := os.Getenv("DB_URL")
-	db, err := sql.Open("postgres", dbURL)
 	
+	const port = "8080"
+	const filepathRoot = "."
 
-	port := "8080"
-	filepathRoot := "."
+	godotenv.Load()
+  	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatalf("DB_URL Must be set")
+	}
+	plat := os.Getenv("PLATFORM")
+	if plat == "" {
+		log.Fatal("PLATFORM must be set")
+	}
 
-	apiCfg := &apiConfig{dbQueries: database.New(db)}
+	dbConn, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Error opening db: %s", err)
+	}
+	dbQueries := database.New(dbConn)
+
+	apiCfg := &apiConfig{
+		fileserverHits: atomic.Int32{},
+		db: dbQueries,
+		platform: plat,
+	}
 	
 	mux := http.NewServeMux()
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))))
@@ -38,6 +52,7 @@ func main() {
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetricCount)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerMetricReset)
 	mux.HandleFunc("POST /api/validate_chirp", handlerChirpsValidate)
+	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 
 	
 	svr := &http.Server{
