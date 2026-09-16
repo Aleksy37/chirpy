@@ -4,6 +4,8 @@ import (
 	"testing"
 	"github.com/google/uuid"
 	"time"
+	"net/http"
+	"errors"
 )
 
 func TestCheckPasswordHash(t *testing.T) {
@@ -118,3 +120,33 @@ func TestValidateJWT(t *testing.T) {
 		})
 	}
 }
+
+func TestGetBearerToken(t *testing.T) {
+	  tests := []struct {
+        name  string
+		headerName string
+        headerVal string
+        want  string
+		wantErr error
+    }{
+        {name: "happy path", headerName: "Authorization", headerVal: "Bearer Valid Token", want: "Valid Token", wantErr: nil},
+		{name: "Wrong Header Name", headerName: "Auth", headerVal: "Bearer Valid Token", want: "", wantErr: ErrBadAuthHeader},
+		{name: "Header Value No Prefix", headerName: "Authorization", headerVal: "Valid Token", want: "", wantErr: ErrBadAuthHeader},
+
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+			headers := make(http.Header)
+			headers.Set(tt.headerName, tt.headerVal)
+            got, err := GetBearerToken(headers)
+			if !errors.Is(err, tt.wantErr) {
+    			t.Errorf("got error %v, want error %v", err, tt.wantErr)
+				}
+            if got != tt.want {
+                t.Errorf("Header %q with value %q gave %q, wanted %q", tt.headerName, tt.headerVal, got, tt.want)
+            }
+        })
+    }
+}
+
