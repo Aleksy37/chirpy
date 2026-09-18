@@ -3,9 +3,8 @@ package main
 import (
 	"encoding/json"
 	"net/http"
-	"time"
-
 	"github.com/Aleksy37/chirpy/internal/auth"
+	"github.com/Aleksy37/chirpy/internal/database"
 )
 
 
@@ -39,21 +38,18 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request)  {
 		return
 	}
 
-	expireTime := 3600
-	if params.ExpiresInSeconds != nil {
-		if *params.ExpiresInSeconds > 3600 {
-			expireTime = 3600
-		} else {
-			expireTime = *params.ExpiresInSeconds
-		}
-	}
-
-
-	token, err := auth.MakeJWT(user.ID, cfg.secret, time.Duration(expireTime) * time.Second)
+	accessToken, err := auth.MakeJWT(user.ID, cfg.secret)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Error creating token", err)
 		return 
 	}
+
+	refreshToken := auth.MakeRefreshToken()
+
+	cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token: refreshToken,
+		UserID: user.ID,
+	})
 		
 	respondWithJSON(w, http.StatusOK, response{
 		User : User{
@@ -61,7 +57,8 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request)  {
 			Email: user.Email,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
-			Token: token,
+			AccessToken: accessToken,
+			RefreshToken: refreshToken,
 		},
 	})
 		

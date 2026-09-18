@@ -8,6 +8,8 @@ import (
 	"github.com/google/uuid"
 	"net/http"
 	"strings"
+	"crypto/rand"
+	"encoding/hex"
 )
 
 
@@ -34,12 +36,12 @@ func HashPassword(password string) (string, error) {
 		return match, nil
 	}
 	
-	func MakeJWT(userID uuid.UUID, tokenSecret string, expiresIn time.Duration) (string, error) {
+	func MakeJWT(userID uuid.UUID, tokenSecret string) (string, error) {
 		signingKey := []byte(tokenSecret)
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 			Issuer: "chirpy-access",
 			IssuedAt: jwt.NewNumericDate(time.Now().UTC()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(expiresIn)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().UTC().Add(time.Duration(1) * time.Hour)),
 			Subject: userID.String(),
 		})
 		return token.SignedString(signingKey)	
@@ -88,3 +90,9 @@ func HashPassword(password string) (string, error) {
 		}
 		return strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer")), nil
 		}	
+
+	func MakeRefreshToken() string {
+		key := make([]byte, 32)
+		rand.Read(key)
+		return hex.EncodeToString(key)
+	}
