@@ -17,6 +17,8 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request)  {
 
 	type response struct {
 		User
+		Token        string `json:"token"`
+		RefreshToken string `json:"refresh_token"`
 	}
 	
     decoder := json.NewDecoder(r.Body)
@@ -57,9 +59,9 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request)  {
 			Email: user.Email,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
-			AccessToken: accessToken,
-			RefreshToken: refreshToken,
 		},
+		Token: accessToken,
+		RefreshToken: refreshToken,
 	})
 		
 }
