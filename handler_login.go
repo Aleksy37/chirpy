@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+
 	"github.com/Aleksy37/chirpy/internal/auth"
 	"github.com/Aleksy37/chirpy/internal/database"
 )
@@ -59,6 +60,7 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request)  {
 			Email: user.Email,
 			CreatedAt: user.CreatedAt,
 			UpdatedAt: user.UpdatedAt,
+			IsChirpyRed: user.IsChirpyRed,
 		},
 		Token: accessToken,
 		RefreshToken: refreshToken,
