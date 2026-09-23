@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+
+	"github.com/Aleksy37/chirpy/internal/auth"
 	"github.com/google/uuid"
 )
 
@@ -16,10 +18,15 @@ func (cfg *apiConfig) handlerRedWebhook(w http.ResponseWriter, r *http.Request) 
 		} `json:"data"`
 		
 	}
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if apiKey != cfg.polka || err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Missing or invalid Api key", err)
+		return
+	}
 	
     decoder := json.NewDecoder(r.Body)
 	params := parameter{}
-	err := decoder.Decode(&params)
+	err = decoder.Decode(&params)
 
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Could not decode parameters", err)

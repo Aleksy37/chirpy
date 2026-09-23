@@ -96,3 +96,12 @@ func HashPassword(password string) (string, error) {
 		rand.Read(key)
 		return hex.EncodeToString(key)
 	}
+
+	func GetAPIKey(headers http.Header) (string, error) {
+		authHeader := headers.Get("Authorization")
+		if authHeader == "" || !strings.HasPrefix(authHeader, "ApiKey "){
+			return "", ErrBadAuthHeader
+		}
+		return strings.TrimSpace(strings.TrimPrefix(authHeader, "ApiKey")), nil
+	}	
+	

@@ -17,6 +17,7 @@ type apiConfig struct {
 	db *database.Queries
 	platform string
 	secret string
+	polka string
 }
 
 func main() {
@@ -41,12 +42,14 @@ func main() {
 	dbQueries := database.New(dbConn)
 
 	secret := os.Getenv("SECRET")
+	polkaKey := os.Getenv("POLKA_KEY")
 
 	apiCfg := &apiConfig{
 		fileserverHits: atomic.Int32{},
 		db: dbQueries,
 		platform: plat,
 		secret: secret,
+		polka: polkaKey,
 	}
 	
 	mux := http.NewServeMux()
